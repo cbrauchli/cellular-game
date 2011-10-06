@@ -1,0 +1,123 @@
+// -*- c++ -*-
+// You can extend this sample scene file format with your own fields.
+// Edit the scene parsing in Scene.cpp.
+{
+    name = "Quake",
+   
+    models = {
+       level = ArticulatedModel::Specification {            
+            filename = "quake3/charon/map-charon3dm11v2.pk3/maps/charon3dm11v2.bsp",
+            preprocess = ArticulatedModel::Preprocess {
+                xform = Matrix4::scale(1, 1, 1)
+            }
+       },
+
+       chaar = MD2Model::Specification {            
+			filename = "md2/eva01/tris.md2",
+			material = "md2/eva01/eva-01.pcx",
+			weaponFilename = "md2/eva01/w_railgun.MD2",
+			weaponMaterial = "md2/eva01/w_railgun.PCX"
+       },
+
+       enemy = MD2Model::Specification {            
+			filename = "md2/eva01/tris.md2",
+			material =  Color3(0.3, 0.6, 0.2),
+			weaponFilename = "md2/eva01/weapon.md2",
+			weaponMaterial = "md2/eva01/weapon.pcx"
+       },
+
+       crate = ArticulatedModel::Specification {            
+            filename = "ifs/crate.ifs",
+            preprocess = ArticulatedModel::Preprocess {
+                materialOverride = #include("material/metalcrate/metalcrate.mat.any")              
+            }
+       },
+
+       shipModel = #include("3ds/spaceFighter01/spaceFighter01.am.any"),
+    },
+    
+    lighting = Lighting::Specification {
+        lightArray = (GLight::spot(Vector3(5, 70, -15), Vector3(0.0, -1.0, 0.0), 0.7, 
+				   Color3(300000))),
+        environmentMap = {
+            constant = 0.1,
+            texture = Texture::Specification {
+                filename      = "cubemap/whiteroom/whiteroom_*.png",
+                desiredFormat = "RGB8",
+                dimension     = "DIM_CUBE_MAP",
+                settings      = Texture::Settings::cubeMap(),
+                preprocess    = Texture::Preprocess::gamma(2.1f)
+            }
+        }
+    },
+
+    skyBox = {
+        constant = 0.1,
+        texture = Texture::Specification {
+            filename      = "cubemap/whiteroom/whiteroom_*.png",
+            desiredFormat = "RGB8",
+            dimension     = "DIM_CUBE_MAP",
+            settings      = Texture::Settings::cubeMap(),
+            preprocess    = Texture::Preprocess::gamma(2.1f)
+        }
+    },
+    
+    entities = {
+	levelA = Entity{
+	    model = "level",
+	    position = CFrame::fromXYZYPRDegrees(0, 0, 0, 0, 0, 0)
+	},
+
+	box = Entity{
+	    model = "crate",
+	    position = CFrame::fromXYZYPRDegrees(-20.3, 6.3, -17.3, 0, 0, 0)
+	},
+
+	mod1 = Entity{
+	    model = "chaar",
+	    position = PhysicsFrameSpline {
+		control = (CFrame::fromXYZYPRDegrees(14, 12.5, -6, 181, 0, 0),
+			   CFrame::fromXYZYPRDegrees(14, 12.5, -6, 91, 0, 0)),
+		time = (0,2),
+		cyclic = true,
+	    },
+	},
+
+	mod = Entity{
+	    model = "enemy",
+	    position = PhysicsFrameSpline {
+		control = (CFrame::fromXYZYPRDegrees(6.7, 12.5, 10.4, 91, 0, 0),
+			   CFrame::fromXYZYPRDegrees(6.7, 12.5, 10.4, 3.1, 0, 0)),
+		time = (0,2),
+		cyclic = true,
+	    },
+	},
+
+	model1 = Entity{
+	    model = "enemy",
+	    position = CFrame::fromXYZYPRDegrees(-0.4, 6.7, 0.8, 220.8, 0, 0),
+	    },
+
+	ship = Entity{
+	    model = "shipModel",
+	    position = PhysicsFrameSpline {
+		control = (CFrame::fromXYZYPRDegrees(-15.5, 4.3, -21.1, 269.7, 0, 0),
+			   CFrame::fromXYZYPRDegrees(-15.5, 12.5, -21.1, 269.7, 0, 0)),
+		time = (0,2),
+		cyclic = true,
+	    },
+	},
+
+
+    },
+    
+    camera = GCamera {
+        coordinateFrame = CFrame::fromXYZYPRDegrees(20.6, 13.5, -13.8, 91.9, -41.8, 0);
+        
+        nearPlaneZ = -0.5,
+        farPlaneZ = -5000,
+        fovDirection = "VERTICAL",
+        fovDegrees = 60
+    }
+   
+}

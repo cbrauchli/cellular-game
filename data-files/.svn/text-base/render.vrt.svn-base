@@ -1,0 +1,10 @@
+// -*- c++ -*-
+
+varying vec2 texCoord;
+//varying vec2 bgCoord;
+
+void main() {
+    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+    texCoord = gl_MultiTexCoord0.xy;
+    //bgCoord  = gl_MultiTexCoord1.xy;
+}

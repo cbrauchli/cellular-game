@@ -1,0 +1,124 @@
+// -*- c++ -*-
+
+uniform sampler2D automata;
+uniform float     width;
+uniform float     height;
+uniform float     x_offset;
+uniform float     y_offset;
+uniform sampler2D noise;
+uniform bool      followPlayer;
+uniform sampler2D background;
+uniform float     timeVar;
+
+varying vec2 texCoord;
+//varying vec2 bgCoord;
+
+/*
+ * Constants
+ */
+#include "simSettings.h"
+
+/*
+ * Material color values
+ */
+#define SAND (vec4((DEPRC * 237.0), (DEPRC * 201.0), (DEPRC * 175.0), 1.0))
+//#define AIR  (vec4(0.0, 0.0, 0.0, 1.0))
+#define WATER (vec4((DEPRC * 110.0), (DEPRC * 142.0), (DEPRC * 225.0), 1.0))
+#define FIRE (vec4((DEPRC * 226.0), (DEPRC * 88.0), (DEPRC * 34.0), 1.0))
+#define WOOD (vec4((DEPRC * 133.0), (DEPRC * 94.0), (DEPRC * 66.0), 1.0))
+#define WHAT (vec4(1,0,1,1))
+
+ivec4 getTexel(sampler2D s, float i, float j) {
+    return ivec4(texture2D(s, vec2(i, j)) * 255.0);
+}
+
+void main() {
+    float invW  = 1.0 / width;
+    float invH  = 1.0 / height;
+
+    ivec4 myState     = ivec4(texture2D(automata, texCoord) * DEPTH);
+    vec2  offsetCoord = vec2(mod(texCoord.x + x_offset, 1.0), mod(texCoord.y + y_offset, 1.0));
+
+    vec4 air;
+    float mySin = sin(texCoord.x * width * (1.0 / 10.0) + timeVar) * 0.5 + 0.5;
+    vec2 fetchCoord;
+    //if (followPlayer) {
+        if (myState.r == R_AIR) {
+            fetchCoord = texCoord * g3d_sampler2DSize(background).x 
+                * g3d_sampler2DInvSize(automata).x / 2.0;
+        } else if (myState.r == R_WATER) {
+            fetchCoord = vec2(texCoord.x - mySin * invW * 0.5 * MAX_REFRACTION, 
+                              texCoord.y - mySin * invH * 0.5 * MAX_REFRACTION);
+        }
+        // we only ever use one of these for a given pixel
+        air = texture2D(background, fetchCoord);
+        //refraction    = texture2D(background, vec2(bgCoord.x - (texCoord.x - 0.5) * 2.0 * invW * MAX_REFRACTION, 
+        //                                           bgCoord.y - (texCoord.y - 0.5) * 2.0 * invH * MAX_REFRACTION));
+        /*(} else {
+        air           = AIR;
+        refraction    = vec4(0.5, 0.5, 0.5, 1.0);
+        }*/
+
+    vec4 shadeColor;
+    if (myState.r == R_AIR) {
+        //shadeColor = AIR;
+        if (myState.g == G_RISING) {
+            shadeColor = WHAT;
+        } else {
+            shadeColor = air;
+        }
+
+    } else if (myState.r == R_SAND) {
+        shadeColor = SAND;
+
+    } else if (myState.r == R_WATER) {
+        shadeColor  = vec4(WATER.r, WATER.g, WATER.b, 1.0);
+        //waveColor   = vec4(WATER.r + 0.001 * float(myRand), WATER.g + 0.001 * float(myRand), WATER.b, 1.0);
+        shadeColor  = mix(shadeColor, air, 0.5);
+        shadeColor  = mix(shadeColor, vec4(0.0, 0.0, 0.5, 1.0), mySin * 0.05);
+
+    } else if (myState.r == R_FIRE) {
+        ivec4 up;
+        int   randVal;
+        int   stop;
+        bool  flicker = false;
+        ivec4 down    = getTexel(automata, texCoord.x, texCoord.y + invH);
+
+        if (down.r == R_FIRE) {
+            int myRand  = int(texture2D(noise, offsetCoord).r * DEPTH);
+            if (myRand > 127) {
+                for (int i = 0; i < FIRE_DEPTH; ++i) {
+                    up = getTexel(automata, texCoord.x, texCoord.y - float(i + 1) * invH);
+                    if (up.r != R_FIRE) {
+                        flicker = true;
+                        stop = i;
+                        break;
+                    }
+                }
+                for (int i = 0; i <= stop; ++i) {
+                    randVal = int(texture2D(noise, 
+                                            vec2(mod(texCoord.x + x_offset, 1.0), 
+                                                 mod(texCoord.y + y_offset - float(i + 1) * invH, 1.0))).r * DEPTH);
+                    if (randVal <= 127) {
+                        flicker = false;
+                    }
+                }
+            }
+        }
+        shadeColor = FIRE;
+        if (flicker) {
+            shadeColor = air;
+        }
+
+    } else if (myState.r == R_WOOD) {
+        shadeColor = WOOD;
+
+    } else { // Unknown!
+        shadeColor = WHAT;
+    }
+
+    gl_FragData[0] = shadeColor;
+    /*gl_FragData[0] = vec4((texCoord.x + texCoord.y) * 0.5,
+                          (texCoord.x + texCoord.y) * 0.5,
+                          (texCoord.x + texCoord.y) * 0.5, 1.0);*/
+}

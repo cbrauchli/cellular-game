@@ -1,0 +1,143 @@
+// -*- c++ -*-
+// You can extend this sample scene file format with your own fields.
+// Edit the scene parsing in Scene.cpp.
+{
+    name = "box",
+   
+    models = {
+        
+       whiteWallModel = ArticulatedModel::Specification {        
+            filename = "ifs/crate.ifs",
+            preprocess = ArticulatedModel::Preprocess {
+                // You can #include a material file, or simply put all of the
+                // options here as was done for groundModel.  #include can be
+                // used to replace any Any value, including a whole 
+                xform = Matrix4::scale(4, 4, 0.01),
+                materialOverride = Material::Specification {
+                    lambertian = Color3(1, 1, 1),
+                }
+            }
+       },
+
+       redWallModel = ArticulatedModel::Specification {        
+            filename = "ifs/crate.ifs",
+            preprocess = ArticulatedModel::Preprocess {
+                // You can #include a material file, or simply put all of the
+                // options here as was done for groundModel.  #include can be
+                // used to replace any Any value, including a whole 
+                xform = Matrix4::scale(4, 4, 0.01),
+                materialOverride = Material::Specification {
+                    lambertian = Color3(1, 0, 0),
+                }
+            }
+       },
+
+       greenWallModel = ArticulatedModel::Specification {        
+            filename = "ifs/crate.ifs",
+            preprocess = ArticulatedModel::Preprocess {
+                // You can #include a material file, or simply put all of the
+                // options here as was done for groundModel.  #include can be
+                // used to replace any Any value, including a whole 
+                xform = Matrix4::scale(4, 4, 0.01),
+                materialOverride = Material::Specification {
+                    lambertian = Color3(0, 1, 0),
+                }
+            }
+       },
+       
+       cubeModel = ArticulatedModel::Specification {        
+            filename = "ifs/crate.ifs",
+            preprocess = ArticulatedModel::Preprocess {
+                // You can #include a material file, or simply put all of the
+                // options here as was done for groundModel.  #include can be
+                // used to replace any Any value, including a whole 
+                xform = Matrix4::scale(1, 1, 1),
+                materialOverride = Material::Specification {
+                    lambertian = Color3(1, 1, 1),
+                }
+            }
+       },
+
+       boxModel = ArticulatedModel::Specification {        
+            filename = "ifs/crate.ifs",
+            preprocess = ArticulatedModel::Preprocess {
+                // You can #include a material file, or simply put all of the
+                // options here as was done for groundModel.  #include can be
+                // used to replace any Any value, including a whole 
+                xform = Matrix4::scale(1, 2, 1),
+                materialOverride = Material::Specification {
+                    lambertian = Color3(0, 0, 0),
+                }
+            }
+       },
+       
+    },
+    
+    lighting = Lighting::Specification {
+        lightArray = (GLight::point(Vector3(0,1.0,0),Color3(100))),
+
+        environmentMap = {
+            constant = 0.5,
+            texture = Texture::Specification {
+                filename      = "cubemap/whiteroom/whiteroom_*.png",
+                desiredFormat = "RGB8",
+                dimension     = "DIM_CUBE_MAP",
+                settings      = Texture::Settings::cubeMap(),
+                preprocess    = Texture::Preprocess::gamma(2.1f)
+            }
+        },
+    },
+
+    skyBox = {
+        constant = 0.5,
+        texture = Texture::Specification {
+            filename      = "cubemap/whiteroom/whiteroom_*.png",
+            desiredFormat = "RGB8",
+            dimension     = "DIM_CUBE_MAP",
+            settings      = Texture::Settings::cubeMap(),
+            preprocess    = Texture::Preprocess::gamma(2.1f)
+        }
+    },
+    
+    entities = {
+        // Each entity has a name and is an instance of a model.  The instantiation syntax accepts
+        // two (optional) arguments: a position spline (which can be a single position), and a 
+        // pose spline (which can be a single pose).
+        
+        backWall = Entity {
+            model = "whiteWallModel",
+            position = CFrame::fromXYZYPRDegrees(0,0,-2, 0,0,0),
+        },
+
+        topWall = Entity {
+            model = "whiteWallModel",
+            position = CFrame::fromXYZYPRDegrees(0,2,0,  0,90,0),
+        },
+
+        bottomWall = Entity {
+            model = "whiteWallModel",
+            position = CFrame::fromXYZYPRDegrees(0,-2,0,  0,90,0),
+        },
+        
+        leftWall = Entity {
+            model = "redWallModel",
+            position = CFrame::fromXYZYPRDegrees(-2,0,0,  90,0,0),
+        },
+
+        rightWall = Entity {
+            model = "greenWallModel",
+            position = CFrame::fromXYZYPRDegrees(2,0,0,  90,0,0),
+        },
+
+    },
+    
+    camera = GCamera {
+        coordinateFrame = CFrame::fromXYZYPRDegrees( -0.0f,   0.6f,   1.8f,  341.1f,  -0.0f,   0.0f),
+        
+        nearPlaneZ = -0.5,
+        farPlaneZ = -50,
+        fovDirection = "VERTICAL",
+        fovDegrees = 60
+    }
+   
+}

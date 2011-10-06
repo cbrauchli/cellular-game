@@ -1,0 +1,66 @@
+// -*- c++ -*-
+// You can extend this sample scene file format with your own fields.
+// Edit the scene parsing in Scene.cpp.
+{
+    name = "Test",
+   
+    models = {
+        
+       crateModel = ArticulatedModel::Specification {            
+            filename = "ifs/crate.ifs",
+            preprocess = ArticulatedModel::Preprocess {
+		materialOverride = Material::Specification {
+		    lambertian = Color3(1, 1, 1),
+		}
+            }
+       },
+
+       sphereModel = ArticulatedModel::Specification {
+	   filename = "ifs/sphere.ifs",
+	   preprocess = ArticulatedModel::Preprocess {
+	       materialOverride = Material::Specification {
+		   lambertian = Color3(1, 1, 1),
+	       }
+	   }
+       },
+    },
+    
+    lighting = Lighting::Specification {
+        lightArray = (GLight::spot(Vector3(5, 5, 3), Vector3(-2.0, -1.0, -1.0), 0.7, 
+				   Color3(1000))),
+
+        environmentMap = {
+            constant = 1.0,
+            texture = Texture::Specification {
+                filename      = "cubemap/test/testcube_*.jpg",
+                desiredFormat = "RGB8",
+                dimension     = "DIM_CUBE_MAP",
+                settings      = Texture::Settings::cubeMap(),
+                preprocess    = Texture::Preprocess::gamma(2.1f)
+            }
+        },
+    },
+    
+    entities = {
+        c0 = Entity {
+            model    = "crateModel",
+            position = Vector3(1.0, 0.5, 0.0),
+        },
+
+        c1 = Entity {
+            model    = "sphereModel",
+            position =  CFrame::fromXYZYPRDegrees(-1.0, 0.5, 2.0, 0, 0, 0),
+        }
+
+    },
+        
+    camera = GCamera {
+        coordinateFrame = CFrame::fromXYZYPRDegrees( -0.0f,   0.6f,   1.8f,  341.1f,  -0.0f,   0.0f),
+        
+        nearPlaneZ = -0.5,
+        farPlaneZ = -50,
+        fovDirection = "VERTICAL",
+        fovDegrees = 60
+    }
+   
+}

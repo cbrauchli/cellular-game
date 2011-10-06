@@ -1,0 +1,333 @@
+// -*- c++ -*-
+/*
+  \file cellular.pix
+ */
+
+#include "simSettings.h"
+
+#ifdef SIM_TEST
+#define RULE(q) gl_FragData[1].r = float(q)/255.0
+#else
+#define RULE(q)
+#endif
+
+#define LOOKED_LEFT < 127
+#define LOOKED_RIGHT > 127
+
+uniform vec2 wh;
+
+uniform sampler2D currentState;
+
+uniform vec2 appDim;
+
+uniform bool spawn;
+
+uniform vec2 mouseXY;
+
+uniform int brushSize;
+
+uniform int matType;
+
+uniform sampler2D noiseTexture;
+
+uniform vec2 offset;
+
+varying vec2 texCoord;
+
+ivec4 getTexel(sampler2D s, float i, float j) {
+    return ivec4(texture2D(s, vec2(i, j)) * 255.0);
+}
+
+int getMin(int a, int b) {
+    if (a < b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+int getMax(int a, int b) {
+    if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+ivec4 spawnHere() {
+    if (matType == R_SAND || matType == R_WOOD) {
+        return ivec4(matType, G_FALLING, 0, 0);
+    } else if (matType == R_FIRE) {
+        return ivec4(matType, G_FALLING, FIRE_TIME, 0);
+    } else if (matType == R_WATER) {
+        return ivec4(matType, G_FALLING, MAX_MASS, 0);
+    }
+}
+
+void main() {
+    float fc_x       = gl_FragCoord.x / wh.x;
+    float fc_y       = gl_FragCoord.y / wh.y;
+    float invW       = 1.0 / wh.x;
+    float invH       = 1.0 / wh.y;
+    float colorScale = 1.0/255.0;
+    float texXOffset = texCoord.x + offset.x;
+    float texYOffset = texCoord.y + offset.y;
+
+    vec2 selfRandCoord    = vec2(mod(texXOffset, 1.0), 
+                                 mod(texYOffset, 1.0));
+    vec2 upRightRandCoord = vec2(mod(texXOffset + invW, 1.0), 
+                                 mod(texYOffset - invH, 1.0));
+    vec2 upLeftRandCoord  = vec2(mod(texXOffset - invW, 1.0), 
+                                 mod(texYOffset - invH, 1.0));
+
+    int selfRand          = int(texture2D(noiseTexture, selfRandCoord).r * DEPTH);
+    int upRightRand       = int(texture2D(noiseTexture, upRightRandCoord).r * DEPTH);
+    int upLeftRand        = int(texture2D(noiseTexture, upLeftRandCoord).r * DEPTH);
+
+    ivec4 self       = getTexel(currentState, fc_x, fc_y);
+    ivec4 left       = getTexel(currentState, fc_x - invW, fc_y);
+    ivec4 right      = getTexel(currentState, fc_x + invW, fc_y);
+    ivec4 up         = getTexel(currentState, fc_x, fc_y - invH);
+    ivec4 down       = getTexel(currentState, fc_x, fc_y + invH);
+    ivec4 upLeft     = getTexel(currentState, fc_x - invW, fc_y - invH);
+    ivec4 upRight    = getTexel(currentState, fc_x + invW, fc_y - invH);
+    ivec4 downLeft   = getTexel(currentState, fc_x - invW, fc_y + invH);
+    ivec4 downRight  = getTexel(currentState, fc_x + invW, fc_y + invH);
+
+    ivec4 state = self;
+    RULE(0);
+
+    if (!spawn && self.r == R_AIR && left.r == R_AIR && right.r == R_AIR &&
+        up.r == R_AIR && down.r == R_AIR && upLeft.r == R_AIR &&
+        upRight.r == R_AIR && downLeft.r == R_AIR && downRight.r == R_AIR) {
+        discard;
+    }
+    
+    /** AIR */
+    if (self.r == R_AIR) {
+        
+        /** FALLING */
+
+        // air below falling sand becomes falling sand
+        if (up.r == R_SAND && up.g == G_FALLING) { 
+            state = ivec4(R_SAND, G_FALLING, 0, 0); RULE(1);
+        }
+
+		// air below falling water becomes falling water
+        else if (up.r == R_WATER && up.g == G_FALLING) { 
+            state = ivec4(R_WATER, G_FALLING, up.b, 0); RULE(2);
+        }
+
+		// air below falling fire becomes falling fire with one less time unit
+        else if (up.r == R_FIRE && up.g == G_FALLING && up.b > 0) { 
+            state = ivec4(R_FIRE, G_FALLING, up.b - 1, 0); RULE(3);
+        }
+        
+        /** MOUNDING */
+
+        // air with air above and stationary sand to the upper left or right becomes stationary sand
+        else if (up.r == R_AIR && 
+                 ((upLeft.r == R_SAND &&  upLeft.g == G_STILL && upLeftRand > 127) || 
+                  (upRight.r == R_SAND && upRight.g == G_STILL && upRightRand < 127))) {
+            
+            state = ivec4(R_SAND, G_FALLING, 0, 0); RULE(4);
+        }  
+
+		/** FLOWING */
+        else {
+            if (left.g == G_STILL && left.r == R_WATER && left.b / VISCOSITY > 0 &&
+                (downLeft.r != R_WATER || downLeft.b >= MAX_MASS) && downLeft.r != R_AIR) {
+                state = ivec4(R_WATER, G_STILL, left.b / VISCOSITY, 0); RULE(5);
+            }
+            
+            if (right.g == G_STILL && right.r == R_WATER && right.b / VISCOSITY > 0 &&
+                (downRight.r != R_WATER || downRight.b >= MAX_MASS) && downRight.r != R_AIR) {
+                state = ivec4(R_WATER, G_STILL, right.b / VISCOSITY, 0); RULE(5);
+            }
+        }
+    }
+
+    /** SAND */
+    else if (self.r == R_SAND) {
+
+        /** FALLING SAND */
+
+        // falling sand with air or border above and stationary material below becomes air
+        if (self.g == G_FALLING && (up.r == R_AIR || up.r == R_BORDER || up.r == R_WOOD) 
+            && down.g == G_FALLING) {
+            state = ivec4(R_AIR, G_STILL, 0, 0); RULE(10);
+        } 
+        
+        // sand with air or falling material below becomes falling sand
+        else if (down.r == R_AIR || down.g == G_FALLING) {
+            state = ivec4(R_SAND, G_FALLING, 0, 0); RULE(11);
+        }
+        
+        // falling sand with a stationary material below becomes stationary sand
+        else if (self.g == G_FALLING && down.g != G_FALLING) {
+            state = ivec4(R_SAND, G_STILL, 0, 0); RULE(12);
+        }
+
+        /** SINKING SAND */
+
+        // sand with water below becomes water
+        else if (down.r == R_WATER && self.g == G_STILL) {
+            state = ivec4(R_WATER, G_STILL, down.b, 0); RULE(13);
+        }
+        
+        /** MOUNDING SAND */
+       
+        // stationary sand with air to the left and lower left or right and lower right becomes air
+        else if (self.g == G_STILL &&
+                 ((left.r == R_AIR && downLeft.r == R_AIR && selfRand < 127) || 
+                  (right.r == R_AIR && downRight.r == R_AIR && selfRand > 127))) {
+            state = ivec4(R_AIR, G_STILL, 0, 0); RULE(14);
+        }
+    }
+    
+    /** WATER */
+    else if (self.r == R_WATER) {
+        
+        /** FALLING WATER */
+        
+        // falling water with air or solid material above and stationary material below becomes air
+        if (self.g == G_FALLING && (up.r == R_AIR || up.r == R_BORDER || up.r == R_WOOD) 
+            && down.g == G_FALLING) {
+            state = ivec4(R_AIR, G_STILL, 0, 0); RULE(20);
+        } 
+        
+        // water with air or falling material below becomes falling water
+        else if (down.r == R_AIR || down.g == G_FALLING) {
+            state = ivec4(R_WATER, G_FALLING, self.b, 0); RULE(21);
+        }
+        
+        // falling water with a stationary material that is not fire below becomes stationary water
+        else if (self.g == G_FALLING && down.g != G_FALLING && 
+                 (down.r != R_WATER || down.b > 0) && down.r != R_FIRE) {
+            state = ivec4(R_WATER, G_STILL, self.b, 0); RULE(22);
+        }
+
+        /** DISPLACED WATER */
+
+        // water with stationary sand above becomes stationary sand
+        else if (up.r == R_SAND && up.g == G_STILL) {
+            state = ivec4(R_SAND, G_STILL, 0, 0); RULE(23);
+        }
+
+        /** FLOWING WATER */
+        if (self.g == G_STILL && state.g != G_FALLING) {
+            
+            // compressing down
+
+            // cell above loses water
+            if (down.r == R_WATER && down.g == G_STILL) {
+                // water with underfilled water below loses the amount the water below is missing
+                if (down.b < MAX_MASS) {
+                    state.b = state.b - getMin(state.b, MAX_MASS - down.b); RULE(80);
+                }
+
+                else if (self.b >= MAX_MASS && down.b >= MAX_MASS && down.b - self.b < MAX_COMPRESS) {
+                    state.b = state.b - MAX_COMPRESS; RULE(81);
+                }
+            }
+            
+            // cell below gains water
+            if (up.r == R_WATER && up.g == G_STILL) {
+                if (self.b < MAX_MASS) {
+                    state.b = state.b + getMax(up.b, MAX_MASS - self.b); RULE(82);
+                }
+                
+                else if (self.b >= MAX_MASS && up.b >= MAX_MASS && self.b - up.b < MAX_COMPRESS) {
+                    state.b = state.b + MAX_COMPRESS; RULE(83);
+                }
+            }
+
+            int temp = 0;
+            if ((left.r == R_WATER || left.r == R_AIR) && state.b > 0) {
+                temp = temp + (left.b - state.b) / VISCOSITY; 
+                if (temp > 0) {
+                    RULE(84);
+                }
+            }
+
+            if ((right.r == R_WATER || right.r == R_AIR) && state.b > 0) {
+                temp = temp + (right.b - state.b) / VISCOSITY; 
+                if ((right.b - state.b) / VISCOSITY > 0) {
+                    RULE(85);
+                }
+            }
+            state.b = state.b + temp;
+
+            // dry
+            if (state.r == R_WATER && state.b <= MIN_MASS) {
+                state = ivec4(R_AIR, G_STILL, 0, 0); RULE(89);
+            }            
+        }
+    } 
+    
+    /** WOOD */
+    else if (self.r == R_WOOD) {
+        
+        // wood next to fire catches fire
+        if (left.r == R_FIRE || right.r == R_FIRE || up.r == R_FIRE ||
+            down.r == R_FIRE) {
+            state = ivec4(R_FIRE, G_STILL, FIRE_TIME, 0); RULE(30);
+        } 
+        
+        // otherwise, wood is always stationary
+        else {
+            state = ivec4(R_WOOD, G_STILL, 0, 0); RULE(31);
+        }
+    }
+
+    /** FIRE */
+    else if (self.r == R_FIRE) {
+
+        /** FALLING FIRE */
+
+        // falling fire with air or border above and stationary material below becomes air
+        if (self.g == G_FALLING && (up.r == R_AIR || up.r == R_BORDER) 
+            && down.g == G_FALLING) {
+            state = ivec4(R_AIR, G_STILL, 0, 0); RULE(40);
+        } 
+
+        // fire with air or falling material below becomes falling fire
+        else if (down.r == R_AIR || down.g == G_FALLING) {
+            state = ivec4(R_FIRE, G_FALLING, self.b, 0); RULE(41);
+        }
+        
+        // fire with water above or below becomes air
+        else if (up.r == R_WATER || down.r == R_WATER) {
+            state = ivec4(R_AIR, G_STILL, 0, 0); RULE(43);
+        }
+        
+        // fire with water flowing into it from the side becomes air
+        else if ((left.r == R_WATER && left.g == G_FLOW_RIGHT) || 
+                 (right.r == R_WATER && right.g == G_FLOW_LEFT)) {
+            state = ivec4(R_AIR, G_STILL, 0, 0); RULE(44);
+        }
+
+        // falling fire with a stationary material below becomes stationary fire
+        else if (self.g == G_FALLING && down.r != R_AIR && down.g == G_STILL) {
+            state = ivec4(R_FIRE, G_STILL, self.b, 0); RULE(45);
+        }
+
+        // stationary fire burns down
+        if (self.g == G_STILL) {
+            state = ivec4(R_FIRE, G_STILL, self.b - 1, 0); RULE(46);
+        }
+        
+        // if fire has burned down, it becomes air
+        if (self.b == 0) {
+            state = ivec4(R_AIR, G_STILL, 0, 0); RULE(47);
+        }
+    }
+    
+    float loc_x = abs(floor(mouseXY.x / appDim.x * wh.x) + 0.5  - gl_FragCoord.x);
+    float loc_y = abs(floor(mouseXY.y / appDim.y * wh.y) + 0.5  - gl_FragCoord.y);
+    if (spawn && SPAWN_MODE && loc_x <= 0.05 && loc_y <= 0.05) {
+        state = spawnHere();
+    }
+    
+    gl_FragData[0] = vec4(state) * colorScale;
+}

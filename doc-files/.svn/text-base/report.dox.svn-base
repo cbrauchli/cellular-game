@@ -1,0 +1,103 @@
+/**
+\mainpage Project 7: Interaction (now with particles!)
+\authors Diogenes Nunez and Aaron Bauer (awb1@williams.edu)
+\htmlonly
+<center><br><br>
+<a href="preview.jpg"><img src="placeholder.jpg" width=500></a>
+</center>
+\endhtmlonly
+
+\section intro Introduction
+
+\section mods Architecture
+
+\subsection spawn Particle spawing
+
+\htmlonly
+<center>
+<a href="normalMap.jpg"><img src="placeholder.jpg" width=400></a>
+<br><strong>A demonstration of untextured particles being created</strong>
+</center>
+\endhtmlonly
+
+\subsection alpha Particle alpha channal
+
+\htmlonly
+<center>
+<a href="shadowMap.jpg"><img src="placeholder.jpg" width=400></a>
+<br><strong>A demonstration of altering the alpha channal of the particles </strong>
+</center>
+\endhtmlonly
+
+\subsection direct Direct illumination of particles
+
+\htmlonly
+<center>
+<a href="lambertian.jpg"><img src="placeholder.jpg" width=400></a>
+<br><strong>A demonstration of particles receiving direct illumination</strong>
+</center>
+\endhtmlonly
+
+\subsection shadow Shadows on particles
+
+\htmlonly
+<center>
+<a href="ambientLight.jpg"><img src="placeholder.jpg" width=400></a>
+<br><strong>A demonstration of particles receiving shadows</strong>
+</center>
+\endhtmlonly
+
+\subsection ambient Ambient light on particles
+
+\htmlonly
+<center>
+<a href="shadows.jpg"><img src="placeholder.jpg" width=400></a>
+<br><strong>A demonstration of particles being shaded with ambient light</strong>
+</center>
+\endhtmlonly
+
+\subsection soft Soft particle effect
+
+\htmlonly
+<center>
+<a href="shadows.jpg"><img src="placeholder.jpg" width=400></a>
+<br><strong>A demonstration of the soft particle effect</strong>
+</center>
+\endhtmlonly
+
+\subsection detect Collision detection on particles
+
+\htmlonly
+<center>
+<embed src="dummy.mp4" width=400>
+<br><strong>This video shows dectection of particle collisions with surfaces in the scene</strong>
+</center>
+\endhtmlonly
+
+\subsection resolve Resolving particle collisions
+
+\htmlonly
+<center>
+<embed src="dummy.mp4" width=400>
+<br><strong>This video shows particles sliding after they collide</strong>
+</center>
+\endhtmlonly
+
+\section err Known Errors/Limitations
+
+\htmlonly
+<center>
+<a href="error.jpg"><img src="placeholder.jpg" width=400></a>
+<br> <strong>Errors in Current Implementation</strong>
+</center>
+\endhtmlonly
+
+\section img Demonstration Video
+
+\htmlonly
+<center>
+<embed src="preview.jpg" width=400>
+</center>
+\endhtmlonly
+
+*/

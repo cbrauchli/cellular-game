@@ -1,0 +1,129 @@
+        /** FLOWING WATER */
+        /*if (self.g == G_STILL) {
+            
+            // compressing down
+
+            // cell above loses water
+            if (down.r == R_WATER && down.g == G_STILL) {
+                // water with underfilled water below loses the amount the water below is missing
+                if (down.b < MAX_MASS) {
+                    state.b -= state.b - min(state.b, (MAX_MASS - down.b));
+                }
+
+                else if (self.b >= MAX_WATER && down.b >= MAX_WATER) {
+                    state.b = state.b - MAX_COMPRESS;
+                }
+            }
+            
+            // cell below gains water
+            if (up.r == R_WATER && up.g == G_STILL) {
+                if (self.b < MAX_MASS) {
+                    state.b = state.b + min(up.b, (MAX_MASS - state.b));
+                }
+                
+                else if (self.b >= MAX_WATER && up.b >= MAX_WATER) {
+                    state.b = state.b + MAX_COMPRESS;
+                }
+            }
+
+            // left
+            
+            // right
+            
+            // above
+            
+            }*/
+        
+		/* Each water cell uses the blue channel to record the number of units 
+		   of water the cell represents. Each cell can hold up to MAX_WATER units.		
+
+		// water with water on one side and air on the other becomes flowing water if it 
+		// represents enough units
+        else if (self.g == G_STILL) {
+            
+            if (left.r == R_AIR) {
+                state = ivec4(R_WATER, G_FLOW_LEFT, self.b, 0); RULE(24);
+            } 
+            
+            else if (right.r == R_AIR) {
+                state = ivec4(R_WATER, G_FLOW_RIGHT, self.b, 0); RULE(25);
+            }
+            
+            // stationary water adjecent to flowing water becomes flowing water
+            else if (left.r == R_WATER && (left.g == G_FLOW_LEFT || left.g == G_FLOW_RIGHT)) {
+                state = ivec4(R_WATER, left.g, self.b, 0); RULE(26);
+            }
+            
+            else if (right.r == R_WATER && (right.g == G_FLOW_LEFT || right.g == G_FLOW_RIGHT)) {
+                state = ivec4(R_WATER, right.g, self.b, 0); RULE(27);
+            }
+        }
+
+		if (self.g != G_FALLING && state.r == R_WATER) {//self.g == G_FLOW_LEFT || self.g == G_FLOW_RIGHT) {
+
+            if(self.g == G_FLOW_LEFT || self.g == G_FLOW_RIGHT) {
+             
+                // water left of water flowing left gains a water unit
+                if (right.r == R_WATER && right.g == G_FLOW_LEFT && right.b > 0) {
+                    state = ivec4(R_WATER, state.g, state.b + 1, 0); RULE(100);
+                }
+                
+                // water right of water flowing right gains a water unit
+                if (left.r == R_WATER && left.g == G_FLOW_RIGHT && left.b > 0) {
+                    state = ivec4(R_WATER, state.g, state.b + 1, 0); RULE(102);
+                }
+            }
+             
+            // water right of water flowing left loses a water unit
+            if (left.r == R_WATER && left.g == G_FLOW_LEFT && self.g != G_FLOW_RIGHT &&
+                self.b > 0) {
+                state = ivec4(R_WATER, state.g, state.b - 1, 0); RULE(101);
+            }
+                                   
+            // water left of water flowing right loses a water unit
+            else if (right.r == R_WATER && right.g == G_FLOW_RIGHT && self.g != G_FLOW_LEFT &&
+                self.b >0) {
+                state = ivec4(R_WATER, state.g, state.b - 1, 0); RULE(103);
+            }
+
+			// water with water below that is not at maximum water units loses a water unit
+			else if (down.r == R_WATER && down.b < MAX_WATER) {
+				state = ivec4(R_WATER, state.g, state.b - 1, 0); RULE(105);
+			}
+
+			// water that is not at maximum water units with water above gains a water unit
+			else if (up.r == R_WATER && self.b < MAX_WATER && up.g != G_FALLING) {
+				state = ivec4(R_WATER, state.g, state.b + 1, 0); RULE(106);
+			}
+
+			// water with water below that has more than maximum water units gains a water unit
+			else if (down.r == R_WATER && down.b > MAX_WATER) {
+				state = ivec4(R_WATER, state.g, state.b + 1, 0); RULE(107);
+			}
+
+			// water that has more than maximuxm water units with water above loses a water unit
+			else if (up.r == R_WATER && self.b > MAX_WATER) {
+				state = ivec4(R_WATER, state.g, state.b - 1, 0); RULE(108);
+			}
+
+		}
+        
+        if (self.g == G_FLOW_LEFT && left.r == R_AIR) {
+            state = ivec4(R_WATER, state.g, state.b - 1, 0); RULE(109);
+        }
+
+        if (self.g == G_FLOW_RIGHT && right.r == R_AIR) {
+            state = ivec4(R_WATER, state.g, state.b - 1, 0); RULE(110);
+        }
+
+        if (self.g != G_FALLING && state.b == 0 && right.g != G_FLOW_LEFT
+            && right.g != G_FLOW_RIGHT && left.g != G_FLOW_LEFT 
+            && left.g != G_FLOW_RIGHT && state.r == R_WATER) {
+            state = ivec4(R_WATER, G_STILL, 0, 0); RULE(28);
+        }
+
+        // water with negative water units becomes air
+        if (state.b < 0) {
+            state = ivec4(R_AIR, G_STILL, 0, 0); RULE(29);
+        } 
+        */

@@ -1,0 +1,79 @@
+// -*- c++ -*-
+/*
+  \file direct.vrt
+ */
+uniform sampler2D lambertianTexture;
+uniform vec4 lambertianConstant;
+uniform vec3 Q;
+uniform vec3 Phi;
+uniform float spotHalfAngle;
+uniform vec3 spotDirection;
+
+uniform samplerCube environmentMap;
+uniform float environmentConstant;
+
+uniform sampler2DShadow shadowMap;
+uniform mat4 lightBiasedModelViewProjectionMatrix;
+
+varying vec3 rawNormal;
+varying vec3 X;
+varying vec2 texCoord;
+varying vec4 P;
+
+#define PI (3.1415926536)
+
+void main(){
+
+    vec3 n = normalize(rawNormal);
+
+    //direct illumination
+    vec3 delta = Q - X;
+    vec3 w_i = normalize(delta);
+    float r2 = dot(delta, delta);
+    vec3 E_j = Phi / (4.0 * PI * r2);
+
+
+    vec3 f = (texture2D(lambertianTexture, texCoord).rgb * lambertianConstant.rgb) / PI;
+    
+    vec3 E_ambient = environmentConstant *
+	(max(0.0,  n.y) * textureCubeLod(environmentMap, vec3(0.0,  1.0, 0.0), 9.0).rgb +
+	 max(0.0, -n.y) * textureCubeLod(environmentMap, vec3(0.0, -1.0, 0.0), 9.0).rgb +
+	 max(0.0,  n.x) * textureCubeLod(environmentMap, vec3(1.0,  0.0, 0.0), 9.0).rgb +
+	 max(0.0, -n.x) * textureCubeLod(environmentMap, vec3(-1.0, 0.0, 0.0), 9.0).rgb +
+	 max(0.0,  n.z) * textureCubeLod(environmentMap, vec3(0.0,  0.0, 1.0), 9.0).rgb +
+	 max(0.0, -n.z) * textureCubeLod(environmentMap, vec3(0.0, 0.0, -1.0), 9.0).rgb);
+
+	float x, y, z;
+	if(n.x < 0.0)
+		x = -1.0;
+	else
+		x = 1.0;
+	if(n.y < 0.0)
+		y = -1.0;
+	else
+		y = 1.0;
+	if(n.z < 0.0)
+		z = -1.0;
+	else
+		z = 1.0;
+	vec3 dir = vec3(x, y, z);
+
+	vec3 P_shadow = vec3(P.x/P.w, P.y/P.w, P.z/P.w);
+	vec4 shade = shadow2D(shadowMap, P_shadow);
+	E_j = E_j * shade.xyz;
+
+	vec3 L_ambient = E_ambient * f;
+	vec3 L_out;
+	if((spotHalfAngle < (PI / 2.0)) && (-dot(w_i, spotDirection) < cos(spotHalfAngle)))
+	    L_out = vec3(0);
+	else
+	    L_out = E_j * max(0.0, dot(w_i, n)) * f;
+
+
+	//gl_FragData[0].rgb = n * 0.5 + vec3(0.5);
+	//gl_FragData[0].rgb = texture2D(lambertianTexture, texCoord).rgb * lambertianConstant.rgb;
+	//gl_FragData[0].rgb = E_j * max(0.0, dot(w_i, n)) * vec3(1);
+	//gl_FragData[0].rgb = L_out;
+	gl_FragData[0].rgb = L_ambient + L_out;
+    
+}

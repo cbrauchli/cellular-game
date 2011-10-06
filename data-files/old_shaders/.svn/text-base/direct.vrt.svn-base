@@ -1,0 +1,17 @@
+// -*- c++ -*-
+
+varying vec3 rawNormal;
+varying vec3 X;
+varying vec2 texCoord;
+varying vec4 P;
+
+uniform mat4 lightBiasedModelViewProjectionMatrix;
+
+void main() {
+    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+    rawNormal = g3d_ObjectToWorldNormalMatrix * gl_Normal;
+    vec4 pos = (g3d_ObjectToWorldMatrix * gl_Vertex);
+    X = pos.xyz;
+    P = (lightBiasedModelViewProjectionMatrix * pos);
+    texCoord = gl_MultiTexCoord0.xy;
+}
